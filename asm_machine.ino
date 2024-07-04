@@ -7,6 +7,7 @@
 
 #include "./sliderMove.h"
 #include "./cpu8008.h"
+#include "./instructionMemory.h"
 
 // defines pins numbers
 const int stepPin = 3; 
@@ -15,10 +16,13 @@ int inputPinList[8] = {6, 7, 8, 9, A1, A2, A3, A4};
 
 SliderMove* sliderMove;
 Cpu8008* cpu8008;
+VirtualInstructionMemory* vInstMem;
 
 void setup() {
   // Sets the two pins as Outputs
   sliderMove = new SliderMove(stepPin, dirPin);
+  cpu8008 = new Cpu8008();
+  vInstMem = new VirtualInstructionMemory();
 
   for(int i=0; i<8; i++){
     pinMode(inputPinList[i], INPUT_PULLUP);
@@ -32,24 +36,40 @@ void setup() {
 
 static int delay_process = 0;
 void loop() {
-  //Clear the rail
-  sliderMove->runStepperBylength(250, HIGH, 3);
-  delay(1000);
-  //Get to the first row
-  sliderMove->runStepperBylength(12, HIGH, 1);
-  delay(1000);
+  // //Clear the rail
+  // sliderMove->runStepperBylength(250, HIGH, 3);
+  // delay(1000);
+  // //Get to the first row
+  // sliderMove->runStepperBylength(12, HIGH, 1);
+  // delay(1000);
 
-
+  //Simulate the instruction memory
+  vInstMem->setInstruction(0x00, 0b01000100);
+  vInstMem->setInstruction(0x01, 0x04);
+  vInstMem->setInstruction(0x02, 0b01000100);
+  vInstMem->setInstruction(0x03, 0x00);
+  vInstMem->setInstruction(0x04, 0b01000100);
+  vInstMem->setInstruction(0x05, 0x02);
+  //Simulate the cpu8008
+  byte pc = 0;
   while(1){
-    if (Serial.available() > 0) {
-      delay(3);//Wait for all the input to come (3ms)
-      
-      int new_idx = readSerialNumber();
-      go2Row(new_idx);
-    }
-    delay(500);
-    printBinary(readInstruct());
+    byte inst = vInstMem->getInstruction(pc);
+    pc = cpu8008->processInstruction(inst);
+    Serial.print("Next PC:");
+    Serial.println(pc, HEX);
+    delay(1000);
   }
+
+  // while(1){
+  //   if (Serial.available() > 0) {
+  //     delay(3);//Wait for all the input to come (3ms)
+      
+  //     int new_idx = readSerialNumber();
+  //     go2Row(new_idx);
+  //   }
+  //   delay(500);
+  //   printBinary(readInstruct());
+  // }
 
 //  runStepperBylength(80, HIGH, 500);
   delay(1000); // One second delay
