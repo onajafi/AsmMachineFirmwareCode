@@ -1,17 +1,12 @@
+#pragma once
 
-typedef unsigned char byte;
-
-class VirtualInstructionMemory{
+class InstructionMemory{
     public:
         InstructionMemory(){}
 
-        void setInstruction(byte address, byte instruction){
-            instructions[address] = instruction;
-        }
+        virtual void setInstruction(byte address, byte instruction) = 0;
 
-        byte getInstruction(byte address){
-            return instructions[address];
-        }
+        virtual byte getInstruction(byte address) = 0;
     private:
         byte instructions[256];
 };

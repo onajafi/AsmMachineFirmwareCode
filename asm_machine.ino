@@ -7,7 +7,10 @@
 
 #include "./sliderMove.h"
 #include "./cpu8008.h"
-#include "./instructionMemory.h"
+#include "./physicalInstructionMemory.h"
+#include "./virtualInstructionMemory.h"
+#include "./irReader.h"
+#include "./singletonSerialComm.h"
 
 // defines pins numbers
 const int stepPin = 3; 
@@ -16,48 +19,118 @@ int inputPinList[8] = {6, 7, 8, 9, A1, A2, A3, A4};
 
 SliderMove* sliderMove;
 Cpu8008* cpu8008;
-VirtualInstructionMemory* vInstMem;
+InstructionMemory* instMem;
+InstructionMemory* virtualInstMem;
+IrReader* irReader;
 
 void setup() {
-  // Sets the two pins as Outputs
-  sliderMove = new SliderMove(stepPin, dirPin);
-  cpu8008 = new Cpu8008();
-  vInstMem = new VirtualInstructionMemory();
-
-  for(int i=0; i<8; i++){
-    pinMode(inputPinList[i], INPUT_PULLUP);
-  }
-  
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
+  Serial.println("Starting the ASM machine");
+  
+  sliderMove = new SliderMove(stepPin, dirPin);
+
+  cpu8008 = new Cpu8008();
+
+  irReader = new IrReader();
+  for(int i=0; i<8; i++){
+    irReader->setInputPin(inputPinList[i], i);
   }
+
+  instMem = new PhysicalInstructionMemory(sliderMove, irReader);
+  virtualInstMem = new VirtualInstructionMemory();
+  
 }
 
-static int delay_process = 0;
+
 void loop() {
-  // //Clear the rail
-  // sliderMove->runStepperBylength(250, HIGH, 3);
-  // delay(1000);
+  
+  //Clear the rail
+  // sliderMove->runStepperByLength(250, HIGH, 3);
+  // delay(500);
   // //Get to the first row
-  // sliderMove->runStepperBylength(12, HIGH, 1);
-  // delay(1000);
+  // sliderMove->runStepperByLength(12, HIGH, 1);
+  // delay(100);
+
+  while(true){
+    
+    Serial.println("Waiting for the first instruction");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByDuration(50000, HIGH, 1.0);
+    if(irReader->read() == 0xAA){
+      break;
+    }
+  }
+  // delay(5000);
+  //Calibrate the with the first 0xAA row
+  Serial.println("Starting the calibration process.");
+  //Step1 - Get to the first 0xAA row
+  while(true){
+    Serial.println("Calibrating Step1 - Calibrating the first row");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, LOW, 0.5);
+    if(irReader->read() != 0xAA){
+      break;
+    }
+  }
+  Serial.println("Finished Step1");
+  // delay(10000);
+  //Step2 - We are a little behind the 0xAA row. Lets get back 
+  // at the beginning of it.
+  while(true){
+    Serial.println("Calibrating Step2 - Finding the beginning of 0xAA");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, HIGH, 0.5);
+    if(irReader->read() == 0xAA){
+      break;
+    }
+  }
+  Serial.println("Finished Step2");
+  // delay(10000);
+  //Step3 - Get to the end of the 0xAA row one millimetre 
+  // at a time until we don't read any 0xAA
+  int length = 0;
+  while(true){
+    Serial.println("Calibrating Step3 - Trying to findout the row length");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, HIGH, 0.5);
+    if(irReader->read() != 0xAA){
+      break;
+    }
+    length++;
+  }
+  Serial.println("Finished Step3");
+  Serial.print("Length of the first row is: ");
+  Serial.print(length, DEC);
+  Serial.println("mm");
+  // delay(10000);
+  //Step4 - Get to the middle of the row
+  Serial.println("Calibrating Step3 - Get to the middle of the row");
+  sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
+  // Now we are ready to compute. our current index is 0
+  Serial.println("Finished Step4");
+  delay(20000);
+
 
   //Simulate the instruction memory
-  vInstMem->setInstruction(0x00, 0b01000100);
-  vInstMem->setInstruction(0x01, 0x04);
-  vInstMem->setInstruction(0x02, 0b01000100);
-  vInstMem->setInstruction(0x03, 0x00);
-  vInstMem->setInstruction(0x04, 0b01000100);
-  vInstMem->setInstruction(0x05, 0x02);
+  virtualInstMem->setInstruction(0x00, 0b01000100);
+  virtualInstMem->setInstruction(0x01, 0x04);
+  virtualInstMem->setInstruction(0x02, 0b01000100);
+  virtualInstMem->setInstruction(0x03, 0x00);
+  virtualInstMem->setInstruction(0x04, 0b01000100);
+  virtualInstMem->setInstruction(0x05, 0x02);
   //Simulate the cpu8008
-  byte pc = 0;
-  while(1){
-    byte inst = vInstMem->getInstruction(pc);
+  int pc = 0;
+  for(int i=0; i<50; i++){
+    byte inst;
+    inst = instMem->getInstruction(pc);
+    Serial.print("Current Inst:\t");
+    printBinary(inst);
+    inst = virtualInstMem->getInstruction(pc);
+    
     pc = cpu8008->processInstruction(inst);
-    Serial.print("Next PC:");
-    Serial.println(pc, HEX);
-    delay(1000);
+    Serial.print("Next PC:\t");
+    Serial.println(pc, DEC);
+    // delay(100);
   }
 
   // while(1){
@@ -71,12 +144,13 @@ void loop() {
   //   printBinary(readInstruct());
   // }
 
-//  runStepperBylength(80, HIGH, 500);
-  delay(1000); // One second delay
+//  runStepperByLength(80, HIGH, 500);
+  delay(10000); // One second delay
   
 }
 
 void printBinary(unsigned char _data){
+  
   for(int i=7; i>=0; i--){
     Serial.write(_data & (0x01 << i) ? '1':'0');
   }
