@@ -1,4 +1,4 @@
-#include "instructionMemory.h"
+#include "../peripheral/instructionMemory.h"
 
 typedef unsigned char byte;
 

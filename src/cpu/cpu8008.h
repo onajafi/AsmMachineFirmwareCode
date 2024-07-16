@@ -44,16 +44,24 @@ public:
                     break;
             }
         }
-        switch(instruction){
-            case 0b00000000:
-            case 0b11111111:
-                //HLT
-                state = NONE;
-                break;
-            case 0b01000100:
-                //JMP Imm
-                state = JMP_IMM;
-                break;
+
+        if(instruction & 0b11000000 == 0b11000000){
+            // MOV Rd, Rs
+            // MOV Rd, MEM
+            // MOV MEM, Rs
+        }else{
+            switch(instruction){
+                case 0b00000000:
+                case 0b11111111:
+                    //HLT
+                    state = NONE;
+                    break;
+                case 0b01000100:
+                    //JMP Imm
+                    state = JMP_IMM;
+                    break;
+                
+            }
         }
 
         this->PC = next_PC;

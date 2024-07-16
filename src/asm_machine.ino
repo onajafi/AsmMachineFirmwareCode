@@ -108,7 +108,7 @@ void loop() {
   sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
   // Now we are ready to compute. our current index is 0
   Serial.println("Finished Step4");
-  delay(20000);
+  delay(2000);
 
 
   //Simulate the instruction memory
@@ -130,7 +130,6 @@ void loop() {
     pc = cpu8008->processInstruction(inst);
     Serial.print("Next PC:\t");
     Serial.println(pc, DEC);
-    // delay(100);
   }
 
   // while(1){
