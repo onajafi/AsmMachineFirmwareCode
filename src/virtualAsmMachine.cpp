@@ -21,15 +21,20 @@ int main() {
 
     //Simulate the instruction memory
     virtualInstMem->setInstruction(0, 0b00000110);
-    virtualInstMem->setInstruction(1, 8);
-    virtualInstMem->setInstruction(2, 0b00000000);
-    virtualInstMem->setInstruction(3, 0b00000000);
-    virtualInstMem->setInstruction(4, 0b01000100);
-    virtualInstMem->setInstruction(5, 2);
+    virtualInstMem->setInstruction(1, 1);//A = 1
+    
+    virtualInstMem->setInstruction(2, 0b00001000);//Inc B
+    virtualInstMem->setInstruction(3, 0b11000001);//A = B
+
+    virtualInstMem->setInstruction(4, 0b00111100);//CMP IMM
+    virtualInstMem->setInstruction(5, 5);
+
+    virtualInstMem->setInstruction(6, 0b01110000);//JMP is sign = 1 ( A is lower )
+    virtualInstMem->setInstruction(7, 2);
 
     //Simulate the cpu8008
     SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
-    for(int i=0; i<50; i++){
+    while(1){
         byte inst;
         inst = virtualInstMem->getInstruction(cpu8008->getPC());
         
@@ -38,6 +43,11 @@ int main() {
         cpu8008->processInstruction(inst);
         std::cout << "Ra:\t" << (int) cpu8008->getReg(0) << std::endl;
         // std::cout << "Next PC:\t" << cpu8008->getPC() << std::endl;
+
+        if(cpu8008->isHalted()){
+            std::cout << "Finished" << std::endl;
+            break;
+        }
 
         //wait for 0.5 seconds
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
