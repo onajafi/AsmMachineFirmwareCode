@@ -20,14 +20,15 @@ int main() {
     std::shared_ptr<VirtualInstructionMemory> virtualInstMem = std::make_shared<VirtualInstructionMemory>();
 
     //Simulate the instruction memory
-    virtualInstMem->setInstruction(0x00, 0b00000110);
-    virtualInstMem->setInstruction(0x01, 0x08);
-    virtualInstMem->setInstruction(0x02, 0b00000000);
-    virtualInstMem->setInstruction(0x03, 0b00000000);
-    virtualInstMem->setInstruction(0x04, 0b01000100);
-    virtualInstMem->setInstruction(0x05, 0x02);
+    virtualInstMem->setInstruction(0, 0b00000110);
+    virtualInstMem->setInstruction(1, 8);
+    virtualInstMem->setInstruction(2, 0b00000000);
+    virtualInstMem->setInstruction(3, 0b00000000);
+    virtualInstMem->setInstruction(4, 0b01000100);
+    virtualInstMem->setInstruction(5, 2);
 
     //Simulate the cpu8008
+    SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
     for(int i=0; i<50; i++){
         byte inst;
         inst = virtualInstMem->getInstruction(cpu8008->getPC());

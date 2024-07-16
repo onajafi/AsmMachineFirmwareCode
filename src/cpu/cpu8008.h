@@ -98,10 +98,12 @@ public:
         if(state != NONE){
             switch(state){
                 case JMP_IMM:
+                    logger.log(DebugLevel::DEBUG, "JMP IMM (2/2)");
                     next_PC = instruction;
                     state = NONE;
                     break;
                 case MVI_IMM:
+                    logger.log(DebugLevel::DEBUG, "MVI (2/2)");
                     getRegOrMem(lastInst[0] & 0b00111000) = instruction;
                     uint8_t Rd = (instruction & 0b00111000) >> 3;
                     getRegOrMem(Rd) = instruction;//The second byte in the MVI instruction is the Immediate value
@@ -109,28 +111,31 @@ public:
                     break;
             }
         }else if((instruction & 0b11000000) == 0b11000000){ // MOV
+            logger.log(DebugLevel::DEBUG, "MOV");
             uint8_t Rd = (instruction & 0b00111000) >> 3;
             uint8_t Rs = (instruction & 0b00000111);
             getRegOrMem(Rd) = getRegOrMem(Rs);
         }else if((instruction & 0b11000111) == 0b00000110){ // MVI (2-bytes)
-            // logger.log("MVI instruction detected\n");
+            logger.log(DebugLevel::DEBUG, "MVI (1/2)");
             lastInst[0] = instruction;
             state = MVI_IMM;
         }else if((instruction & 0b11000111) == 0b00000000){ // INR 
+            logger.log(DebugLevel::DEBUG, "INR");
             uint8_t Rd = (instruction & 0b00111000) >> 3;
             getRegOrMem(Rd) +=1;
         }else if((instruction & 0b11000111) == 0b00000001){ // DCR 
+            logger.log(DebugLevel::DEBUG, "DCR");
             uint8_t Rd = (instruction & 0b00111000) >> 3;
             getRegOrMem(Rd) -=1;
         }else{
             switch(instruction){
                 case 0b00000000:
                 case 0b11111111:
-                    //HLT
+                    logger.log(DebugLevel::DEBUG, "HLT");//Halt
                     state = NONE;
                     break;
                 case 0b01000100:
-                    //JMP Imm
+                    logger.log(DebugLevel::DEBUG, "JMP IMM (1/2)");
                     state = JMP_IMM;
                     break;
                 
