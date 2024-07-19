@@ -5,12 +5,13 @@
  */
  // Test on arduino Nano (w.ith old bootloader)
 
-#include "./sliderMove.h"
-#include "./cpu8008.h"
-#include "./physicalInstructionMemory.h"
-#include "./virtualInstructionMemory.h"
-#include "./irReader.h"
-#include "./singletonSerialComm.h"
+#include "./peripheral/sliderMove.h"
+#include "./cpu/cpu8008.h"
+#include "./peripheral/physicalInstructionMemory.h"
+#include "./peripheral/virtualInstructionMemory.h"
+#include "./peripheral/irReader.h"
+#include "./peripheral/singletonLogger.h"
+#include "./peripheral/ledInterfaceHandler.h"
 
 // defines pins numbers
 const int stepPin = 3; 
@@ -22,6 +23,7 @@ Cpu8008* cpu8008;
 InstructionMemory* instMem;
 InstructionMemory* virtualInstMem;
 IrReader* irReader;
+LedInterfaceHandler* ledInterfaceHandler;
 
 void setup() {
   Serial.begin(9600);
@@ -38,6 +40,8 @@ void setup() {
 
   instMem = new PhysicalInstructionMemory(sliderMove, irReader);
   virtualInstMem = new VirtualInstructionMemory();
+
+  ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10);
   
 }
 
@@ -50,6 +54,31 @@ void loop() {
   // //Get to the first row
   // sliderMove->runStepperByLength(12, HIGH, 1);
   // delay(100);
+
+  ledInterfaceHandler->setSevenSegment(0,0);
+  ledInterfaceHandler->setSevenSegment(1,1);
+  ledInterfaceHandler->setSevenSegment(2,2);
+  ledInterfaceHandler->setSevenSegment(3,3);
+  ledInterfaceHandler->setSevenSegment(4,4);
+  ledInterfaceHandler->setSevenSegment(5,5);
+  ledInterfaceHandler->setSevenSegment(6,6);
+  ledInterfaceHandler->setSevenSegment(7,7);
+  for(int i=0; i<8; i++){
+    ledInterfaceHandler->setMatrix8x8(i, 0b00000000);
+  }
+  ledInterfaceHandler->setMatrix8x8(0, 0b00000001);
+  ledInterfaceHandler->setMatrix8x8(1, 0b00000011);
+  ledInterfaceHandler->setMatrix8x8(2, 0b00000111);
+  ledInterfaceHandler->setMatrix8x8(3, 0b00001111);
+  ledInterfaceHandler->setMatrix8x8(4, 0b00011111);
+  ledInterfaceHandler->setMatrix8x8(5, 0b00111111);
+  ledInterfaceHandler->setMatrix8x8(6, 0b01111111);
+  ledInterfaceHandler->setMatrix8x8(7, 0b11111111);
+    
+
+  while(1){
+    ledInterfaceHandler->displayAll(110);
+  }
 
   while(true){
     

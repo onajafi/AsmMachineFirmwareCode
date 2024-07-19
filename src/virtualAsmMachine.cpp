@@ -1,3 +1,6 @@
+
+#ifndef ARDUINO
+
 #include <iostream>
 #include <memory>
 #include <chrono>
@@ -56,3 +59,5 @@ int main() {
 
     return 0;
 }
+
+#endif

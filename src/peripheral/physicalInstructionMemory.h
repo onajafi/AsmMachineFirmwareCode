@@ -1,6 +1,6 @@
 #include "instructionMemory.h"
 #include "irReader.h"
-#include "singletonSerialComm.h"
+#include "singletonLogger.h"
 
 
 class PhysicalInstructionMemory : public InstructionMemory{
