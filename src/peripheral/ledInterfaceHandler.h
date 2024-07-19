@@ -237,6 +237,11 @@ public:
     }
   }
 
+  void turnOff(){
+    columnHandler->clear();
+    
+  }
+
 };
 
 

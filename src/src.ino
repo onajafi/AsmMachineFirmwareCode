@@ -16,7 +16,7 @@
 // defines pins numbers
 const int stepPin = 3; 
 const int dirPin = 4; 
-int inputPinList[8] = {6, 7, 8, 9, A1, A2, A3, A4};
+int inputPinList[8] = {5, 6, 7, 8, A1, A2, A3, A4};
 
 SliderMove* sliderMove;
 Cpu8008* cpu8008;
@@ -26,21 +26,26 @@ IrReader* irReader;
 LedInterfaceHandler* ledInterfaceHandler;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Starting the ASM machine");
   
   sliderMove = new SliderMove(stepPin, dirPin);
 
+  Serial.println("Setting up the CPU");
   cpu8008 = new Cpu8008();
 
+  Serial.println("Setting up the IR Reader");
   irReader = new IrReader();
   for(int i=0; i<8; i++){
     irReader->setInputPin(inputPinList[i], i);
   }
 
+  Serial.println("Setting up the memory");
   instMem = new PhysicalInstructionMemory(sliderMove, irReader);
+  Serial.println("Setting up the virtual memory");
   virtualInstMem = new VirtualInstructionMemory();
 
+  Serial.println("Setting up the led interface");
   ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10);
   
 }
@@ -74,15 +79,14 @@ void loop() {
   ledInterfaceHandler->setMatrix8x8(5, 0b00111111);
   ledInterfaceHandler->setMatrix8x8(6, 0b01111111);
   ledInterfaceHandler->setMatrix8x8(7, 0b11111111);
-    
 
-  while(1){
-    ledInterfaceHandler->displayAll(110);
-  }
+  ledInterfaceHandler->turnOff();
+  
 
   while(true){
     
     Serial.println("Waiting for the first instruction");
+    // delay(1000);
     //Run as long as the first non-0xff is found
     sliderMove->runStepperByDuration(50000, HIGH, 1.0);
     if(irReader->read() == 0xAA){
@@ -137,7 +141,7 @@ void loop() {
   sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
   // Now we are ready to compute. our current index is 0
   Serial.println("Finished Step4");
-  delay(2000);
+  delay(200);
 
 
   //Simulate the instruction memory
@@ -147,19 +151,23 @@ void loop() {
   virtualInstMem->setInstruction(0x03, 0x00);
   virtualInstMem->setInstruction(0x04, 0b01000100);
   virtualInstMem->setInstruction(0x05, 0x02);
+
   //Simulate the cpu8008
+  Serial.println("Starting the CPU emulation");
   int pc = 0;
   for(int i=0; i<50; i++){
     byte inst;
-    inst = instMem->getInstruction(pc);
-    Serial.print("Current Inst:\t");
-    printBinary(inst);
+    // inst = instMem->getInstruction(pc);
+    // Serial.print("Current Inst:\t");
+    // printBinary(inst);
     inst = virtualInstMem->getInstruction(pc);
     
     pc = cpu8008->processInstruction(inst);
-    Serial.print("Next PC:\t");
-    Serial.println(pc, DEC);
+    // Serial.print("Next PC:\t");
+    // Serial.println(pc, DEC);
+    ledInterfaceHandler->displayAll(610);
   }
+  Serial.println("Finished the CPU emulation");
 
   // while(1){
   //   if (Serial.available() > 0) {
@@ -173,7 +181,7 @@ void loop() {
   // }
 
 //  runStepperByLength(80, HIGH, 500);
-  delay(10000); // One second delay
+  delay(1000); // One second delay
   
 }
 

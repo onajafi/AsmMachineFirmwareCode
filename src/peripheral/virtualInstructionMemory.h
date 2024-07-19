@@ -14,5 +14,5 @@ class VirtualInstructionMemory : public InstructionMemory{
             return instructions[address];
         }
     private:
-        byte instructions[256];
+        byte instructions[32];//This has to be low, other wise the memory will get filled up
 };

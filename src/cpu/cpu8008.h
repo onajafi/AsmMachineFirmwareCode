@@ -1,6 +1,8 @@
 
 #include "../peripheral/singletonLogger.h"
 
+#define MEMORY_SIZE 64
+
 typedef uint8_t byte;
 
 enum InstState{
@@ -34,8 +36,8 @@ class Cpu8008{
 
     bool halted; // This is not part of the 8008 architecture it just tells if the program is finished or not
 
-    //The Data Memory
-    byte memory[256];
+    //The Data Memory (The Data storage is way more bigger than this in the actual 8008)
+    byte memory[MEMORY_SIZE];
 
     /**Instructions that are more than one byte require multiple times of reading until it
      * is fully read. We need to preserve the state of the machine to know what to do next;
@@ -97,7 +99,7 @@ public:
         carry = 0;//TODO:: Implement this
 
         //Initialize data memory with zeros
-        for(int i=0; i<256; i++){
+        for(int i=0; i<MEMORY_SIZE; i++){
             memory[i] = 0;
         }
     }

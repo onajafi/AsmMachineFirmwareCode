@@ -7,6 +7,4 @@ class InstructionMemory{
         virtual void setInstruction(byte address, byte instruction) = 0;
 
         virtual byte getInstruction(byte address) = 0;
-    private:
-        byte instructions[256];
 };
