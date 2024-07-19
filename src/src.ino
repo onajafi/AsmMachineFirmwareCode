@@ -155,17 +155,24 @@ void loop() {
   //Simulate the cpu8008
   Serial.println("Starting the CPU emulation");
   int pc = 0;
-  for(int i=0; i<50; i++){
-    byte inst;
-    // inst = instMem->getInstruction(pc);
-    // Serial.print("Current Inst:\t");
-    // printBinary(inst);
-    inst = virtualInstMem->getInstruction(pc);
-    
-    pc = cpu8008->processInstruction(inst);
-    // Serial.print("Next PC:\t");
-    // Serial.println(pc, DEC);
-    ledInterfaceHandler->displayAll(610);
+  for(int i=0; i<50; ){
+    Serial.println("calling go To Address");
+    if(instMem->goToAddress(pc, 5000)){
+      Serial.println("In the cycle process");
+      byte inst;
+      inst = instMem->readInstruction();
+      // Serial.print("Current Inst:\t");
+      // printBinary(inst);
+      inst = virtualInstMem->getInstruction(pc);
+      
+      pc = cpu8008->processInstruction(inst);
+      // Serial.print("Next PC:\t");
+      // Serial.println(pc, DEC);
+      i++;
+      Serial.print("i");
+      Serial.println(i);
+    }
+    ledInterfaceHandler->displayAll(310);
   }
   Serial.println("Finished the CPU emulation");
 

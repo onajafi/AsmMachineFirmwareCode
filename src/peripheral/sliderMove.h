@@ -2,7 +2,7 @@ class SliderMove {
 private:
     int stepPin;
     int dirPin;
-    int pulseWidthUs = 300;
+    int pulseWidthUs = 1000;
     float stepsPerMm = 27.5;
     float distanceMmBetweenRows = 8;
 
@@ -46,6 +46,12 @@ public:
         this->runStepper(steps, dir, speed);
     }
 
+    uint32_t stepperForDuration(uint32_t duration_us, double speed = 1.0){
+        unsigned long tmpPulseWidthUs = this->pulseWidthUs / speed;
+        unsigned long steps = duration_us / (tmpPulseWidthUs * 2);
+        return steps;
+    }
+
     void stepNRows(int n, double speed = 1.0){
         bool dir;
         if(n>0){
@@ -55,5 +61,9 @@ public:
             n *= -1;
         }
         runStepperByLength(n * distanceMmBetweenRows, dir, speed);
+    }
+
+    int giveNumberOfStepsToMoveNRows(int n){
+        return n * distanceMmBetweenRows * stepsPerMm;
     }
 };
