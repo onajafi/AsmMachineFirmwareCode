@@ -1,3 +1,4 @@
+#pragma once
 
 #ifdef ARDUINO
 
@@ -183,13 +184,13 @@ public:
   
 };
 
-
 class LedInterfaceHandler{
   ShiftRegister* sr1;
   ShiftRegister* sr2;
   DigitOn7Seg* digitOn7Seg;
   ColumnHandler* columnHandler;
   MatrixRowHandler* matrixRowHandler;
+  uint32_t wait_time = 1;
 
   uint8_t sevenSeg[8];
   uint8_t matrix8x8[8];
@@ -239,10 +240,49 @@ public:
 
   void turnOff(){
     columnHandler->clear();
-    
+  }
+
+  void displayWithTimeLimit(uint32_t max_time_us){
+    static uint32_t last_state = 0;
+    // Serial.println(last_state);
+    uint32_t start_time = micros();
+    uint8_t cycle=0;
+    while( micros() - start_time < max_time_us ){
+      columnHandler->clear();
+      if(last_state<8){
+        digitOn7Seg->writeDigit(sevenSeg[last_state]);
+      }else{
+        matrixRowHandler->writeRow(matrix8x8[last_state - 8]);
+      }
+      columnHandler->turnOnColumn(last_state);
+      // delayMicroseconds(wait_time);
+      last_state = (last_state + 1) % 16; 
+      cycle++;
+    }
+    // if(true){
+    //   Serial.println("rep:");
+    //   Serial.println(micros() - start_time);
+    //   Serial.println(max_time_us);
+    // }
+    // columnHandler->clear(); // This is needed to make sure that some leds don't flash brighter
   }
 
 };
 
+/**
+ * This class is a singleton rapper for the LedInterfaceHandler
+*/
+class LedInterfaceHandlerSingleton{
+  static LedInterfaceHandler* ledInterfaceHandler;
+public:
+  static LedInterfaceHandler* getInstance(){
+    if(LedInterfaceHandlerSingleton::ledInterfaceHandler == NULL){
+      LedInterfaceHandlerSingleton::ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10);
+    }
+    return LedInterfaceHandlerSingleton::ledInterfaceHandler;
+  }
+};
+
+LedInterfaceHandler* LedInterfaceHandlerSingleton::ledInterfaceHandler;
 
 #endif //ARDUINO

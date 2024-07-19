@@ -1,10 +1,16 @@
+#pragma once
+
+#include "./ledInterfaceHandler.h"
+
 class SliderMove {
 private:
     int stepPin;
     int dirPin;
-    int pulseWidthUs = 1000;
+    int pulseWidthUs = 500;
     float stepsPerMm = 27.5;
     float distanceMmBetweenRows = 8;
+
+    LedInterfaceHandler* ledInterfaceHandler;
 
 public:
     void runStepper(unsigned long steps, bool dir, double speed = 1.0){
@@ -13,15 +19,22 @@ public:
         for(int x = 0; x < steps; x++) {
             digitalWrite(stepPin,HIGH); 
             delayMicroseconds(tmpPulseWidthUs); 
+            // ledInterfaceHandler->displayWithTimeLimit(tmpPulseWidthUs);
             digitalWrite(stepPin,LOW); 
-            delayMicroseconds(tmpPulseWidthUs); 
+            if(x%2 == 0){
+                ledInterfaceHandler->displayWithTimeLimit(tmpPulseWidthUs);
+            }else{
+                delayMicroseconds(tmpPulseWidthUs);
+            }
+            // delayMicroseconds(tmpPulseWidthUs); 
+            // ledInterfaceHandler->displayWithTimeLimit(tmpPulseWidthUs);
         }
     }
 
-public:
     SliderMove(int stepPin, int dirPin) {
         this->stepPin = stepPin;
         this->dirPin = dirPin;
+        this->ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
 
         pinMode(stepPin, OUTPUT);
         pinMode(dirPin, OUTPUT);
@@ -29,10 +42,6 @@ public:
 
     void setPulseWidth(int pulseWidthUs) {
         this->pulseWidthUs = pulseWidthUs;
-    }
-
-    void moveSlider(int position) {
-        // Code to move the slider to the specified position
     }
 
     void runStepperByLength(unsigned long len_mm, bool dir, double speed = 1.0){
@@ -46,7 +55,7 @@ public:
         this->runStepper(steps, dir, speed);
     }
 
-    uint32_t stepperForDuration(uint32_t duration_us, double speed = 1.0){
+    uint32_t stepsForDuration(uint32_t duration_us, double speed = 1.0){
         unsigned long tmpPulseWidthUs = this->pulseWidthUs / speed;
         unsigned long steps = duration_us / (tmpPulseWidthUs * 2);
         return steps;

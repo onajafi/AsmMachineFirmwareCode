@@ -19,26 +19,15 @@ public:
         Serial.println("Can't write to Physical Memory");
     }
 
-    bool goToAddress(byte address, uint32_t max_time_us_for_cycle){
-        Serial.print("this->stepsLeftToGo: ");
-        Serial.println(this->stepsLeftToGo);
-        if(this->sliderIndex != address){
-            this->stepsLeftToGo = sliderMove->giveNumberOfStepsToMoveNRows(address - this->sliderIndex);
-            this->sliderIndex = address;
-        }
-        Serial.print("New val: ");
-        Serial.println(this->stepsLeftToGo);
-        if(this->stepsLeftToGo == 0){
-            return true;
-        }
+    byte getInstruction(byte address) override{
+        sliderMove->stepNRows(address - this->sliderIndex, 4.0);
+        this->sliderIndex = address;
+        return irReader->read();
+    }
 
-        int32_t maxStepsToGo = sliderMove->stepperForDuration(max_time_us_for_cycle);
-        int tmpStepsToGo = sgn(this->stepsLeftToGo) * min(magnitude(this->stepsLeftToGo), maxStepsToGo);
-        Serial.print("tmpStepsToGo: ");
-        Serial.println(tmpStepsToGo);
-        sliderMove->runStepper(magnitude(tmpStepsToGo), tmpStepsToGo > 0 ? HIGH : LOW, 1.5);
-        this->stepsLeftToGo -= tmpStepsToGo;
+    bool goToAddress(byte address, uint32_t max_time_us_for_cycle){
         
+        //TODO make concurrent singleton
         return false;
     }
     

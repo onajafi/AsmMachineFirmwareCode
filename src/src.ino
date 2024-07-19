@@ -12,6 +12,7 @@
 #include "./peripheral/irReader.h"
 #include "./peripheral/singletonLogger.h"
 #include "./peripheral/ledInterfaceHandler.h"
+#include "./peripheral/concurrentMotorAndDisplay.h"
 
 // defines pins numbers
 const int stepPin = 3; 
@@ -24,6 +25,7 @@ InstructionMemory* instMem;
 InstructionMemory* virtualInstMem;
 IrReader* irReader;
 LedInterfaceHandler* ledInterfaceHandler;
+ConcurrentMotorAndDisplay* concurrentMotorAndDisplay;
 
 void setup() {
   Serial.begin(115200);
@@ -46,8 +48,9 @@ void setup() {
   virtualInstMem = new VirtualInstructionMemory();
 
   Serial.println("Setting up the led interface");
-  ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10);
+  ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
   
+  // concurrentMotorAndDisplay = new ConcurrentMotorAndDisplay(sliderMove, irReader, ledInterfaceHandler);
 }
 
 
@@ -81,6 +84,15 @@ void loop() {
   ledInterfaceHandler->setMatrix8x8(7, 0b11111111);
 
   ledInterfaceHandler->turnOff();
+
+  // while(1){
+  //   while(!concurrentMotorAndDisplay->setTargetAddress(20)){
+  //     concurrentMotorAndDisplay->runCycle();
+  //   }
+  //   while(!concurrentMotorAndDisplay->setTargetAddress(1)){
+  //     concurrentMotorAndDisplay->runCycle();
+  //   }
+  // }
   
 
   while(true){
@@ -88,7 +100,7 @@ void loop() {
     Serial.println("Waiting for the first instruction");
     // delay(1000);
     //Run as long as the first non-0xff is found
-    sliderMove->runStepperByDuration(50000, HIGH, 1.0);
+    sliderMove->runStepperByDuration(50000, HIGH, 2.0);
     if(irReader->read() == 0xAA){
       break;
     }
@@ -156,23 +168,20 @@ void loop() {
   Serial.println("Starting the CPU emulation");
   int pc = 0;
   for(int i=0; i<50; ){
-    Serial.println("calling go To Address");
-    if(instMem->goToAddress(pc, 5000)){
-      Serial.println("In the cycle process");
-      byte inst;
-      inst = instMem->readInstruction();
-      // Serial.print("Current Inst:\t");
-      // printBinary(inst);
-      inst = virtualInstMem->getInstruction(pc);
-      
-      pc = cpu8008->processInstruction(inst);
-      // Serial.print("Next PC:\t");
-      // Serial.println(pc, DEC);
-      i++;
-      Serial.print("i");
-      Serial.println(i);
-    }
-    ledInterfaceHandler->displayAll(310);
+    Serial.println("In the cycle process");
+    byte inst = instMem->getInstruction(pc);
+    // inst = instMem->readInstruction();
+    // Serial.print("Current Inst:\t");
+    // printBinary(inst);
+    inst = virtualInstMem->getInstruction(pc);
+    
+    pc = cpu8008->processInstruction(inst);
+    // Serial.print("Next PC:\t");
+    // Serial.println(pc, DEC);
+    i++;
+    // Serial.print("i");
+    // Serial.println(i);
+    // ledInterfaceHandler->displayAll(310);
   }
   Serial.println("Finished the CPU emulation");
 
