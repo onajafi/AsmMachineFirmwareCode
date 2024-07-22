@@ -40,6 +40,9 @@ public:
             snprintf(buffer, sizeof(buffer), format, args...);
             Serial.print("[");
             switch(level) {
+                case DebugLevel::DEBUG:
+                    Serial.print("DEBUG");
+                    break;
                 case DebugLevel::INFO:
                     Serial.print("INFO");
                     break;

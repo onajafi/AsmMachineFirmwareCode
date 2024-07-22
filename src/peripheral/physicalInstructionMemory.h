@@ -19,7 +19,7 @@ public:
         Serial.println("Can't write to Physical Memory");
     }
 
-    byte getInstruction(byte address) override{
+    byte getInstruction(uint32_t address) override{
         sliderMove->stepNRows(address - this->sliderIndex, 4.0);
         this->sliderIndex = address;
         return irReader->read();

@@ -126,14 +126,14 @@ public:
     // Ref #2: https://en.wikipedia.org/wiki/Intel_8008
     byte processInstruction(byte instruction){
         byte next_PC = PC + 1;
+        this->halted = false;
         
         if(state != NONE){
             uint8_t Rd;
             switch(state){
                 case MVI_IMM:
                     logger.log(DebugLevel::DEBUG, "MVI (2/2)");
-                    getRegOrMem(lastInst[0] & 0b00111000) = instruction;
-                    Rd = (instruction & 0b00111000) >> 3;
+                    Rd = (lastInst[0] & 0b00111000) >> 3;
                     getRegOrMem(Rd) = instruction;//The second byte in the instruction is the Immediate value
                     state = NONE;
                     break;
@@ -319,16 +319,15 @@ public:
                 case 0b00000000:
                 case 0b11111111:
                     logger.log(DebugLevel::DEBUG, "HLT");//Halt
-                    halted = true;
+                    this->halted = true;
                     next_PC = this->PC; // No moving!!!
                     state = NONE;
                     break;
                 default:
-                    logger.log(DebugLevel::ERROR, "Unknown Instruction: %d", instruction);
+                    logger.log(DebugLevel::ERROR, "Unknown Instruction: %u", instruction);
                     break;
             }
         }
-
         this->PC = next_PC;
         return next_PC;
     }

@@ -9,14 +9,32 @@ class ShiftRegister{
   int clockPin;
   //Pin connected to Data in (DS) of 74HC595
   int dataPin;
+  //Pin connected to enable pin (active low) of 74HC595
+  int enablePin;
 public:
-  ShiftRegister(int latchPin, int clockPin, int dataPin){
+  ShiftRegister(int latchPin, int clockPin, int dataPin, int enablePin = -1){
     this->latchPin = latchPin;
     this->clockPin = clockPin;
     this->dataPin = dataPin;
+    this->enablePin = enablePin;
     pinMode(latchPin, OUTPUT);
     pinMode(dataPin, OUTPUT);
     pinMode(clockPin, OUTPUT);
+    if(this->enablePin != -1){
+      pinMode(enablePin, OUTPUT);
+    }
+  }
+
+  void enable(){
+    if(this->enablePin != -1){
+      digitalWrite(this->enablePin, LOW);
+    }
+  }
+
+  void disable(){
+    if(this->enablePin != -1){
+      digitalWrite(this->enablePin, HIGH);
+    }
   }
 
   void write(byte _data){
@@ -96,8 +114,8 @@ public:
     //This is the map for the 8x8 matrix it should be modified according to the wiring
     map[0] = 0b00100000;
     map[1] = 0b00000100;
-    map[2] = 0b00000001;//
-    map[3] = 0b00000010;//
+    map[2] = 0b00000001;
+    map[3] = 0b00000010;
     map[4] = 0b00001000;
     map[5] = 0b01000000;
     map[6] = 0b00010000;
@@ -124,7 +142,8 @@ public:
   }
 
   clear(){
-    this->sr->writeX2(0b1111111100000000);
+    // this->sr->writeX2(0b1111111100000000);
+    this->sr->disable();
   }
 
   //This part should be modified according to the wiring
@@ -180,6 +199,7 @@ public:
         this->sr->writeX2(0b1111011100000000);
         break;
     }
+    this->sr->enable();
   }
   
 };
@@ -190,17 +210,17 @@ class LedInterfaceHandler{
   DigitOn7Seg* digitOn7Seg;
   ColumnHandler* columnHandler;
   MatrixRowHandler* matrixRowHandler;
-  uint32_t wait_time = 1;
+  uint32_t wait_time = 40;
 
   uint8_t sevenSeg[8];
   uint8_t matrix8x8[8];
 public:
-  LedInterfaceHandler(int rowSrPinLatchPin, int rowSrPinClockPin, int rowSrPinDataPin, int  colSrPinLatchPin, int colSrPinClockPin, int colSrPinDataPin){
+  LedInterfaceHandler(int rowSrPinLatchPin, int rowSrPinClockPin, int rowSrPinDataPin, int  colSrPinLatchPin, int colSrPinClockPin, int colSrPinDataPin, int colSrPinEnablePin){
     sr1 = new ShiftRegister(rowSrPinLatchPin, rowSrPinClockPin, rowSrPinDataPin);
     digitOn7Seg = new DigitOn7Seg(sr1);
-    sr2 = new ShiftRegister(colSrPinLatchPin, colSrPinClockPin, colSrPinDataPin);
     matrixRowHandler = new MatrixRowHandler(sr1);
 
+    sr2 = new ShiftRegister(colSrPinLatchPin, colSrPinClockPin, colSrPinDataPin, colSrPinEnablePin);
     columnHandler = new ColumnHandler(sr2);
   }
 
@@ -220,19 +240,19 @@ public:
     matrix8x8[idx] = data;
   }
 
-  void displayAll(uint32_t delay_us){
+  void displayAll(){
     for(int i=0; i<8; i++){
       columnHandler->clear();
       digitOn7Seg->writeDigit(sevenSeg[i]);
       columnHandler->turnOnColumn(i);
-      delayMicroseconds(delay_us);
+      delayMicroseconds(this->wait_time);
     //   delay(1000);
     }
     for(int i=0; i<8; i++){
       columnHandler->clear();
       matrixRowHandler->writeRow(matrix8x8[i]);
       columnHandler->turnOnColumn(i + 8);
-      delayMicroseconds(delay_us);
+      delayMicroseconds(this->wait_time);
 
     //   delay(1000);
     }
@@ -255,7 +275,8 @@ public:
         matrixRowHandler->writeRow(matrix8x8[last_state - 8]);
       }
       columnHandler->turnOnColumn(last_state);
-      // delayMicroseconds(wait_time);
+      delayMicroseconds(wait_time);
+      // delay(1000);
       last_state = (last_state + 1) % 16; 
       cycle++;
     }
@@ -264,7 +285,7 @@ public:
     //   Serial.println(micros() - start_time);
     //   Serial.println(max_time_us);
     // }
-    // columnHandler->clear(); // This is needed to make sure that some leds don't flash brighter
+    columnHandler->clear(); // This is needed to make sure that some leds don't flash brighter
   }
 
 };
@@ -277,7 +298,7 @@ class LedInterfaceHandlerSingleton{
 public:
   static LedInterfaceHandler* getInstance(){
     if(LedInterfaceHandlerSingleton::ledInterfaceHandler == NULL){
-      LedInterfaceHandlerSingleton::ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10);
+      LedInterfaceHandlerSingleton::ledInterfaceHandler = new LedInterfaceHandler(A5, A0, 12, 9, 11, 10, 2);
     }
     return LedInterfaceHandlerSingleton::ledInterfaceHandler;
   }

@@ -14,6 +14,7 @@ private:
 
 public:
     void runStepper(unsigned long steps, bool dir, double speed = 1.0){
+        static uint32_t last_display_time = 0;
         unsigned long tmpPulseWidthUs = this->pulseWidthUs / speed;
         digitalWrite(dirPin, dir);
         for(int x = 0; x < steps; x++) {
@@ -21,8 +22,10 @@ public:
             delayMicroseconds(tmpPulseWidthUs); 
             // ledInterfaceHandler->displayWithTimeLimit(tmpPulseWidthUs);
             digitalWrite(stepPin,LOW); 
-            if(x%2 == 0){
+            uint32_t time = micros();
+            if(time - last_display_time > 500){
                 ledInterfaceHandler->displayWithTimeLimit(tmpPulseWidthUs);
+                last_display_time = time;
             }else{
                 delayMicroseconds(tmpPulseWidthUs);
             }

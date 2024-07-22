@@ -1,6 +1,8 @@
 #include "../peripheral/instructionMemory.h"
+#include "singletonLogger.h"
 
-typedef unsigned char byte;
+typedef uint8_t byte;
+#define MAX_INSTRUCTIONS 32
 
 class VirtualInstructionMemory : public InstructionMemory{
     public:
@@ -10,9 +12,13 @@ class VirtualInstructionMemory : public InstructionMemory{
             instructions[address] = instruction;
         }
 
-        byte getInstruction(byte address){
+        byte getInstruction(uint32_t address){
+            if(address >= MAX_INSTRUCTIONS){
+                SingletonLogger::getInstance().log(DebugLevel::ERROR, "Address out of bounds: %d", address);
+                return 0;
+            }
             return instructions[address];
         }
     private:
-        byte instructions[32];//This has to be low, other wise the memory will get filled up
+        byte instructions[MAX_INSTRUCTIONS];//This has to be low, other wise the memory will get filled up
 };

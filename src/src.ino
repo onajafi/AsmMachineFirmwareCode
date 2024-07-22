@@ -21,8 +21,8 @@ int inputPinList[8] = {5, 6, 7, 8, A1, A2, A3, A4};
 
 SliderMove* sliderMove;
 Cpu8008* cpu8008;
-InstructionMemory* instMem;
-InstructionMemory* virtualInstMem;
+PhysicalInstructionMemory* instMem;
+VirtualInstructionMemory* virtualInstMem;
 IrReader* irReader;
 LedInterfaceHandler* ledInterfaceHandler;
 ConcurrentMotorAndDisplay* concurrentMotorAndDisplay;
@@ -50,11 +50,13 @@ void setup() {
   Serial.println("Setting up the led interface");
   ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
   
+  SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
   // concurrentMotorAndDisplay = new ConcurrentMotorAndDisplay(sliderMove, irReader, ledInterfaceHandler);
 }
 
 
 void loop() {
+  SingletonLogger& logger = SingletonLogger::getInstance();
   
   //Clear the rail
   // sliderMove->runStepperByLength(250, HIGH, 3);
@@ -74,16 +76,25 @@ void loop() {
   for(int i=0; i<8; i++){
     ledInterfaceHandler->setMatrix8x8(i, 0b00000000);
   }
-  ledInterfaceHandler->setMatrix8x8(0, 0b00000001);
-  ledInterfaceHandler->setMatrix8x8(1, 0b00000011);
-  ledInterfaceHandler->setMatrix8x8(2, 0b00000111);
-  ledInterfaceHandler->setMatrix8x8(3, 0b00001111);
-  ledInterfaceHandler->setMatrix8x8(4, 0b00011111);
-  ledInterfaceHandler->setMatrix8x8(5, 0b00111111);
-  ledInterfaceHandler->setMatrix8x8(6, 0b01111111);
-  ledInterfaceHandler->setMatrix8x8(7, 0b11111111);
+  ledInterfaceHandler->setMatrix8x8(0, 0b00011000);
+  ledInterfaceHandler->setMatrix8x8(1, 0b00100100);
+  ledInterfaceHandler->setMatrix8x8(2, 0b01000010);
+  ledInterfaceHandler->setMatrix8x8(3, 0b10000001);
+  ledInterfaceHandler->setMatrix8x8(4, 0b10000001);
+  ledInterfaceHandler->setMatrix8x8(5, 0b01000010);
+  ledInterfaceHandler->setMatrix8x8(6, 0b00100100);
+  ledInterfaceHandler->setMatrix8x8(7, 0b00011000);
 
-  ledInterfaceHandler->turnOff();
+  // ledInterfaceHandler->turnOff();
+
+  // while(1){
+
+  //   ledInterfaceHandler->displayWithTimeLimit(200000);
+  //   // digitalWrite(2, LOW);
+  //   // ledInterfaceHandler->displayWithTimeLimit(200000);
+  //   // digitalWrite(2, HIGH);
+  //   // delay(100);
+  // }
 
   // while(1){
   //   while(!concurrentMotorAndDisplay->setTargetAddress(20)){
@@ -96,8 +107,9 @@ void loop() {
   
 
   while(true){
-    
-    Serial.println("Waiting for the first instruction");
+    static int count_print = 0;
+    if (count_print++ % 10 == 0)
+      Serial.println("Waiting for the first instruction");
     // delay(1000);
     //Run as long as the first non-0xff is found
     sliderMove->runStepperByDuration(50000, HIGH, 2.0);
@@ -153,71 +165,77 @@ void loop() {
   sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
   // Now we are ready to compute. our current index is 0
   Serial.println("Finished Step4");
-  delay(200);
+  // delay(200);
+  ledInterfaceHandler->displayWithTimeLimit(200);
 
 
   //Simulate the instruction memory
-  virtualInstMem->setInstruction(0x00, 0b01000100);
-  virtualInstMem->setInstruction(0x01, 0x04);
-  virtualInstMem->setInstruction(0x02, 0b01000100);
-  virtualInstMem->setInstruction(0x03, 0x00);
-  virtualInstMem->setInstruction(0x04, 0b01000100);
-  virtualInstMem->setInstruction(0x05, 0x02);
+  virtualInstMem->setInstruction(0, 0b00101110);
+  virtualInstMem->setInstruction(1, 0);//W = 0
+  virtualInstMem->setInstruction(2, 0b00111101);//Imm = W
+  // virtualInstMem->setInstruction(3, 1);//Imm = W
+  virtualInstMem->setInstruction(3, 0b00101000);//W++
+  virtualInstMem->setInstruction(4, 0b01000100);
+  virtualInstMem->setInstruction(5, 2);//JMP 2
 
   //Simulate the cpu8008
   Serial.println("Starting the CPU emulation");
   int pc = 0;
-  for(int i=0; i<50; ){
-    Serial.println("In the cycle process");
-    byte inst = instMem->getInstruction(pc);
-    // inst = instMem->readInstruction();
+  for(int i=0; true; i++){
+    logger.log(DebugLevel::DEBUG, "Begin cycle process");
+    Serial.print("pc: ");
+    Serial.println(pc);
+    byte inst ;
+    inst = instMem->getInstruction(pc);
+    // ledInterfaceHandler->displayWithTimeLimit(500000);
     // Serial.print("Current Inst:\t");
     // printBinary(inst);
+    Serial.println("S2-getting the virtual inst");
+    // ledInterfaceHandler->displayWithTimeLimit(300000);
     inst = virtualInstMem->getInstruction(pc);
-    
+
+    Serial.print("Current Inst:\t");
+    printBinary(inst);
+
+    Serial.println("S3-process");
+    // ledInterfaceHandler->displayWithTimeLimit(300000);
     pc = cpu8008->processInstruction(inst);
-    // Serial.print("Next PC:\t");
-    // Serial.println(pc, DEC);
-    i++;
-    // Serial.print("i");
-    // Serial.println(i);
-    // ledInterfaceHandler->displayAll(310);
+    delay(10);
+
+    ledInterfaceHandler->setSevenSegment(0, cpu8008->getPC()/10%10);
+    ledInterfaceHandler->setSevenSegment(1, cpu8008->getPC()%10);
+
+    ledInterfaceHandler->setSevenSegment(2, cpu8008->getReg(0)/10%10);
+    ledInterfaceHandler->setSevenSegment(3, cpu8008->getReg(0)%10);
+
+    ledInterfaceHandler->setSevenSegment(4, cpu8008->getReg(5)/10%10);
+    ledInterfaceHandler->setSevenSegment(5, cpu8008->getReg(5)%10);
+
+    ledInterfaceHandler->setSevenSegment(6, cpu8008->getMemory(1)/10%10);
+    ledInterfaceHandler->setSevenSegment(7, cpu8008->getMemory(1)%10);
+    
+    for(uint8_t j=0; j<8; j++){
+      ledInterfaceHandler->setMatrix8x8(j, cpu8008->getMemory(j));
+    }
+    ledInterfaceHandler->displayAll();
+    if (cpu8008->isHalted()){
+      break;
+    }
   }
   Serial.println("Finished the CPU emulation");
 
-  // while(1){
-  //   if (Serial.available() > 0) {
-  //     delay(3);//Wait for all the input to come (3ms)
-      
-  //     int new_idx = readSerialNumber();
-  //     go2Row(new_idx);
-  //   }
-  //   delay(500);
-  //   printBinary(readInstruct());
-  // }
 
 //  runStepperByLength(80, HIGH, 500);
-  delay(1000); // One second delay
-  
+  // delay(1000); // One second delay
+  ledInterfaceHandler->displayWithTimeLimit(10000000);//This works as a delay
 }
 
 void printBinary(unsigned char _data){
   
   for(int i=7; i>=0; i--){
-    Serial.write(_data & (0x01 << i) ? '1':'0');
+    Serial.print((_data & (0x01 << i)) ? "1":"0");
   }
-  Serial.write('\n');
-}
-
-unsigned char readInstruct(){
-  unsigned char output = 0x00;
-
-  for(int i=0; i<8; i++){
-    output = output << 1;
-    output |= digitalRead(inputPinList[i]) ? 0x00 : 0x01;
-  }
-  
-  return output;
+  Serial.print("\n");
 }
 
 int readSerialNumber(){
