@@ -172,8 +172,7 @@ void loop() {
   //Simulate the instruction memory
   virtualInstMem->setInstruction(0, 0b00101110);
   virtualInstMem->setInstruction(1, 0);//W = 0
-  virtualInstMem->setInstruction(2, 0b00111101);//Imm = W
-  // virtualInstMem->setInstruction(3, 1);//Imm = W
+  virtualInstMem->setInstruction(2, 0b11111101);//Mem = W
   virtualInstMem->setInstruction(3, 0b00101000);//W++
   virtualInstMem->setInstruction(4, 0b01000100);
   virtualInstMem->setInstruction(5, 2);//JMP 2

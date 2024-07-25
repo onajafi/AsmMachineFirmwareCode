@@ -23,17 +23,12 @@ int main() {
     std::shared_ptr<VirtualInstructionMemory> virtualInstMem = std::make_shared<VirtualInstructionMemory>();
 
     //Simulate the instruction memory
-    virtualInstMem->setInstruction(0, 0b00000110);
-    virtualInstMem->setInstruction(1, 1);//A = 1
-    
-    virtualInstMem->setInstruction(2, 0b00001000);//Inc B
-    virtualInstMem->setInstruction(3, 0b11000001);//A = B
-
-    virtualInstMem->setInstruction(4, 0b00111100);//CMP IMM
-    virtualInstMem->setInstruction(5, 5);
-
-    virtualInstMem->setInstruction(6, 0b01110000);//JMP is sign = 1 ( A is lower )
-    virtualInstMem->setInstruction(7, 2);
+    virtualInstMem->setInstruction(0, 0b00101110);
+    virtualInstMem->setInstruction(1, 0);//W = 0
+    virtualInstMem->setInstruction(2, 0b11111101);//Mem = W
+    virtualInstMem->setInstruction(3, 0b00101000);//W++
+    virtualInstMem->setInstruction(4, 0b01000100);
+    virtualInstMem->setInstruction(5, 2);//JMP 2
 
     //Simulate the cpu8008
     SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
@@ -45,6 +40,11 @@ int main() {
         
         cpu8008->processInstruction(inst);
         std::cout << "Ra:\t" << (int) cpu8008->getReg(0) << std::endl;
+        std::cout << "Rw:\t" << (int) cpu8008->getReg(5) << std::endl;
+        //Print a chunck of memory (index 0 to 7)
+        for(uint8_t j=0; j<8; j++){
+            std::cout << "M[" << (int) j << "]:\t" << (int) cpu8008->getMemory(j) << std::endl;
+        }
         // std::cout << "Next PC:\t" << cpu8008->getPC() << std::endl;
 
         if(cpu8008->isHalted()){
