@@ -113,7 +113,11 @@ public:
     }
 
     uint8_t getMemory(byte address){
-        return memory[address];
+        if(address < MEMORY_SIZE){
+            return memory[address];
+        }else{
+            return 0xff;
+        }
     }
 
     bool isHalted(){
@@ -173,8 +177,8 @@ public:
                 case CPI_IMM:
                     logger.log(DebugLevel::DEBUG, "CPI (2/2)");
                     //The second byte in the instruction is the Immediate value
-                    sign = (A < instruction); //A - Rs < 0
-                    zero = (A == instruction); //A - Rs = 0
+                    sign = (A < instruction); //A - Imm < 0
+                    zero = (A == instruction); //A - Imm = 0
                     state = NONE;
                     break;
                 
@@ -270,6 +274,12 @@ public:
             logger.log(DebugLevel::DEBUG, "CPI (1/2)");
             lastInst[0] = instruction;
             state = CPI_IMM;
+        }else if((instruction & 0b11111111) == 0b00000010){ // RLC (2-bytes)
+            logger.log(DebugLevel::DEBUG, "RLC (1/2)");
+            A = A << 1;
+        }else if((instruction & 0b11111111) == 0b00001010){ // RRC (2-bytes)
+            logger.log(DebugLevel::DEBUG, "RRC (1/2)");
+            A = A >> 1;
         }
         //Program Counter and Stack Control Instructions
         //The actual 8008 processor has a PC size of 2-bytes. This 
@@ -284,34 +294,50 @@ public:
             logger.log(DebugLevel::DEBUG, "JNC IMM (1/2)");
             if(!carry)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01001000){ // JNZ (2-bytes)
             logger.log(DebugLevel::DEBUG, "JNZ IMM (1/2)");
             if(!zero)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01010000){ // JP (2-bytes)
             logger.log(DebugLevel::DEBUG, "JP IMM (1/2)");
             if(!sign)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01011000){ // JPO (2-bytes)
             logger.log(DebugLevel::DEBUG, "JPO IMM (1/2)");
             if(!parity)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01100000){ // JC (2-bytes)
             logger.log(DebugLevel::DEBUG, "JC IMM (1/2)");
             if(carry)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01101000){ // JZ (2-bytes)
             logger.log(DebugLevel::DEBUG, "JZ IMM (1/2)");
             if(zero)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01110000){ // JM (2-bytes)
             logger.log(DebugLevel::DEBUG, "JM IMM (1/2)");
             if(sign)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }else if(instruction == 0b01111000){ // JPE (2-bytes)
             logger.log(DebugLevel::DEBUG, "JPE IMM (1/2)");
             if(parity)
                 state = JMP_IMM;
+            else
+                next_PC++;
         }
         //Machine Instructions
         else{

@@ -170,12 +170,40 @@ void loop() {
 
 
   //Simulate the instruction memory
+  // byte* inst_list = [
+  //   0b00101110,
+  //   0,
+  //   0b11111110
+  //   ];
   virtualInstMem->setInstruction(0, 0b00101110);
   virtualInstMem->setInstruction(1, 0);//W = 0
-  virtualInstMem->setInstruction(2, 0b11111101);//Mem = W
-  virtualInstMem->setInstruction(3, 0b00101000);//W++
-  virtualInstMem->setInstruction(4, 0b01000100);
-  virtualInstMem->setInstruction(5, 2);//JMP 2
+  virtualInstMem->setInstruction(2, 0b00111110);//
+  virtualInstMem->setInstruction(3, 0b00000001);//Mem = 1(Imm)
+  virtualInstMem->setInstruction(4, 0b00101000);//W++
+  virtualInstMem->setInstruction(5, 0b00111110);//
+  virtualInstMem->setInstruction(6, 0b00000011);//Mem = 3(Imm)
+  virtualInstMem->setInstruction(7, 0b00101000);//W++
+  virtualInstMem->setInstruction(8, 0b00111110);//
+  virtualInstMem->setInstruction(9, 0b00000111);//Mem = 7(Imm)
+  virtualInstMem->setInstruction(10, 0b00101000);//W++
+  virtualInstMem->setInstruction(11, 0b00111110);//
+  virtualInstMem->setInstruction(12, 0b00001111);//Mem = 15(Imm)
+  virtualInstMem->setInstruction(13, 0b00101000);//W++
+  virtualInstMem->setInstruction(14, 0b00111110);//
+  virtualInstMem->setInstruction(15, 0b00011111);//Mem = 31(Imm)
+  virtualInstMem->setInstruction(16, 0b00101000);//W++
+  virtualInstMem->setInstruction(17, 0b00111110);//
+  virtualInstMem->setInstruction(18, 0b00111111);//Mem = 63(Imm)
+  virtualInstMem->setInstruction(19, 0b00101000);//W++
+  virtualInstMem->setInstruction(20, 0b00111110);//
+  virtualInstMem->setInstruction(21, 0b01111111);//Mem = 127(Imm)
+  virtualInstMem->setInstruction(22, 0b00101000);//W++
+  virtualInstMem->setInstruction(23, 0b00111110);//
+  virtualInstMem->setInstruction(24, 0b11111111);//Mem = 127(Imm)
+  virtualInstMem->setInstruction(25, 0b00101000);//W++
+
+  virtualInstMem->setInstruction(26, 0b00000000);
+  virtualInstMem->setInstruction(27, 2);//JMP 2
 
   //Simulate the cpu8008
   Serial.println("Starting the CPU emulation");
@@ -207,11 +235,11 @@ void loop() {
     ledInterfaceHandler->setSevenSegment(2, cpu8008->getReg(0)/10%10);
     ledInterfaceHandler->setSevenSegment(3, cpu8008->getReg(0)%10);
 
+    ledInterfaceHandler->setSevenSegment(4, cpu8008->getReg(1)/10%10);
+    ledInterfaceHandler->setSevenSegment(5, cpu8008->getReg(1)%10);
+
     ledInterfaceHandler->setSevenSegment(4, cpu8008->getReg(5)/10%10);
     ledInterfaceHandler->setSevenSegment(5, cpu8008->getReg(5)%10);
-
-    ledInterfaceHandler->setSevenSegment(6, cpu8008->getMemory(1)/10%10);
-    ledInterfaceHandler->setSevenSegment(7, cpu8008->getMemory(1)%10);
     
     for(uint8_t j=0; j<8; j++){
       ledInterfaceHandler->setMatrix8x8(j, cpu8008->getMemory(j));
@@ -226,7 +254,7 @@ void loop() {
 
 //  runStepperByLength(80, HIGH, 500);
   // delay(1000); // One second delay
-  ledInterfaceHandler->displayWithTimeLimit(10000000);//This works as a delay
+  ledInterfaceHandler->displayWithTimeLimit(100000000);//This works as a delay
 }
 
 void printBinary(unsigned char _data){

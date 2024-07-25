@@ -210,7 +210,7 @@ class LedInterfaceHandler{
   DigitOn7Seg* digitOn7Seg;
   ColumnHandler* columnHandler;
   MatrixRowHandler* matrixRowHandler;
-  uint32_t wait_time = 40;
+  uint32_t wait_time = 80;
 
   uint8_t sevenSeg[8];
   uint8_t matrix8x8[8];
@@ -280,11 +280,7 @@ public:
       last_state = (last_state + 1) % 16; 
       cycle++;
     }
-    // if(true){
-    //   Serial.println("rep:");
-    //   Serial.println(micros() - start_time);
-    //   Serial.println(max_time_us);
-    // }
+    
     columnHandler->clear(); // This is needed to make sure that some leds don't flash brighter
   }
 

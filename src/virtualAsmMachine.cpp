@@ -5,6 +5,7 @@
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <vector>
 #include "./cpu/cpu8008.h"
 #include "./peripheral/virtualInstructionMemory.h"
 
@@ -23,12 +24,25 @@ int main() {
     std::shared_ptr<VirtualInstructionMemory> virtualInstMem = std::make_shared<VirtualInstructionMemory>();
 
     //Simulate the instruction memory
-    virtualInstMem->setInstruction(0, 0b00101110);
-    virtualInstMem->setInstruction(1, 0);//W = 0
-    virtualInstMem->setInstruction(2, 0b11111101);//Mem = W
-    virtualInstMem->setInstruction(3, 0b00101000);//W++
-    virtualInstMem->setInstruction(4, 0b01000100);
-    virtualInstMem->setInstruction(5, 2);//JMP 2
+    std::vector<uint8_t> instructions = {
+        0b00101110,
+        0b00000000, // W = 0
+        0b00000110,
+        0b00000001, // A = 1
+        0b11111000, // Mem = W
+        0b00000010, // A << 1
+        0b00101000, // W++
+        0b00111100, 
+        0b00000000, // CMP (if A==0)
+        0b01001000,
+        0b00000100, // JNZ (jump to 4 if A!=0)
+        0b00000000, // HLT
+    };
+
+    // Set instructions to the virtual instruction memory
+    for (size_t i = 0; i < instructions.size(); i++) {
+        virtualInstMem->setInstruction(i, instructions[i]);
+    }
 
     //Simulate the cpu8008
     SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
