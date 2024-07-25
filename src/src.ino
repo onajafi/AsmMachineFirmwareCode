@@ -54,6 +54,71 @@ void setup() {
   // concurrentMotorAndDisplay = new ConcurrentMotorAndDisplay(sliderMove, irReader, ledInterfaceHandler);
 }
 
+void waitUntilPunchCardInsertion(){
+
+
+  //Step0 - Run motor until a 0xAA is saw
+  while(true){
+    static int count_print = 0;
+    if (count_print++ % 10 == 0)
+      Serial.println("Waiting for the first instruction");
+    // delay(1000);
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByDuration(50000, HIGH, 2.0);
+    if(irReader->read() == 0xAA){
+      break;
+    }
+  }
+  // delay(5000);
+  //Calibrate the with the first 0xAA row
+  Serial.println("Starting the calibration process.");
+
+  //Step1 - Get to the first 0xAA row
+  while(true){
+    Serial.println("Calibrating Step1 - Calibrating the first row");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, LOW, 0.5);
+    if(irReader->read() != 0xAA){
+      break;
+    }
+  }
+  Serial.println("Finished Step1");
+
+  //Step2 - We are a little behind the 0xAA row. Lets get back 
+  // at the beginning of it.
+  while(true){
+    Serial.println("Calibrating Step2 - Finding the beginning of 0xAA");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, HIGH, 0.5);
+    if(irReader->read() == 0xAA){
+      break;
+    }
+  }
+  Serial.println("Finished Step2");
+  
+  //Step3 - Get to the end of the 0xAA row one millimetre 
+  // at a time until we don't read any 0xAA
+  int length = 0;
+  while(true){
+    Serial.println("Calibrating Step3 - Trying to findout the row length");
+    //Run as long as the first non-0xff is found
+    sliderMove->runStepperByLength(1, HIGH, 0.5);
+    if(irReader->read() != 0xAA){
+      break;
+    }
+    length++;
+  }
+  Serial.println("Finished Step3");
+  Serial.print("Length of the first row is: ");
+  Serial.print(length, DEC);
+  Serial.println("mm");
+  
+  //Step4 - Get to the middle of the row
+  Serial.println("Calibrating Step3 - Get to the middle of the row");
+  sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
+  // Now we are ready to compute. our current index is 0
+  Serial.println("Finished Step4");
+}
 
 void loop() {
   SingletonLogger& logger = SingletonLogger::getInstance();
@@ -87,123 +152,26 @@ void loop() {
 
   // ledInterfaceHandler->turnOff();
 
-  // while(1){
 
-  //   ledInterfaceHandler->displayWithTimeLimit(200000);
-  //   // digitalWrite(2, LOW);
-  //   // ledInterfaceHandler->displayWithTimeLimit(200000);
-  //   // digitalWrite(2, HIGH);
-  //   // delay(100);
-  // }
-
-  // while(1){
-  //   while(!concurrentMotorAndDisplay->setTargetAddress(20)){
-  //     concurrentMotorAndDisplay->runCycle();
-  //   }
-  //   while(!concurrentMotorAndDisplay->setTargetAddress(1)){
-  //     concurrentMotorAndDisplay->runCycle();
-  //   }
-  // }
-  
-
-  while(true){
-    static int count_print = 0;
-    if (count_print++ % 10 == 0)
-      Serial.println("Waiting for the first instruction");
-    // delay(1000);
-    //Run as long as the first non-0xff is found
-    sliderMove->runStepperByDuration(50000, HIGH, 2.0);
-    if(irReader->read() == 0xAA){
-      break;
-    }
-  }
-  // delay(5000);
-  //Calibrate the with the first 0xAA row
-  Serial.println("Starting the calibration process.");
-  //Step1 - Get to the first 0xAA row
-  while(true){
-    Serial.println("Calibrating Step1 - Calibrating the first row");
-    //Run as long as the first non-0xff is found
-    sliderMove->runStepperByLength(1, LOW, 0.5);
-    if(irReader->read() != 0xAA){
-      break;
-    }
-  }
-  Serial.println("Finished Step1");
-  // delay(10000);
-  //Step2 - We are a little behind the 0xAA row. Lets get back 
-  // at the beginning of it.
-  while(true){
-    Serial.println("Calibrating Step2 - Finding the beginning of 0xAA");
-    //Run as long as the first non-0xff is found
-    sliderMove->runStepperByLength(1, HIGH, 0.5);
-    if(irReader->read() == 0xAA){
-      break;
-    }
-  }
-  Serial.println("Finished Step2");
-  // delay(10000);
-  //Step3 - Get to the end of the 0xAA row one millimetre 
-  // at a time until we don't read any 0xAA
-  int length = 0;
-  while(true){
-    Serial.println("Calibrating Step3 - Trying to findout the row length");
-    //Run as long as the first non-0xff is found
-    sliderMove->runStepperByLength(1, HIGH, 0.5);
-    if(irReader->read() != 0xAA){
-      break;
-    }
-    length++;
-  }
-  Serial.println("Finished Step3");
-  Serial.print("Length of the first row is: ");
-  Serial.print(length, DEC);
-  Serial.println("mm");
-  // delay(10000);
-  //Step4 - Get to the middle of the row
-  Serial.println("Calibrating Step3 - Get to the middle of the row");
-  sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
-  // Now we are ready to compute. our current index is 0
-  Serial.println("Finished Step4");
-  // delay(200);
+  // waitUntilPunchCardInsertion();
   ledInterfaceHandler->displayWithTimeLimit(200);
 
 
   //Simulate the instruction memory
-  // byte* inst_list = [
-  //   0b00101110,
-  //   0,
-  //   0b11111110
-  //   ];
   virtualInstMem->setInstruction(0, 0b00101110);
   virtualInstMem->setInstruction(1, 0);//W = 0
-  virtualInstMem->setInstruction(2, 0b00111110);//
-  virtualInstMem->setInstruction(3, 0b00000001);//Mem = 1(Imm)
-  virtualInstMem->setInstruction(4, 0b00101000);//W++
-  virtualInstMem->setInstruction(5, 0b00111110);//
-  virtualInstMem->setInstruction(6, 0b00000011);//Mem = 3(Imm)
-  virtualInstMem->setInstruction(7, 0b00101000);//W++
-  virtualInstMem->setInstruction(8, 0b00111110);//
-  virtualInstMem->setInstruction(9, 0b00000111);//Mem = 7(Imm)
+  virtualInstMem->setInstruction(2, 0b00000110);
+  virtualInstMem->setInstruction(3, 0b00000001);//A = 1
+  virtualInstMem->setInstruction(4, 0b11111000);//Mem = W
+  virtualInstMem->setInstruction(5, 0b00111100);
+  virtualInstMem->setInstruction(6, 0b11111111);//CMP (if A==255)
+  virtualInstMem->setInstruction(7, 0b00000010);//A << 1
+  virtualInstMem->setInstruction(8, 0b00110100);
+  virtualInstMem->setInstruction(9, 0b00000001);//A = A | 1
   virtualInstMem->setInstruction(10, 0b00101000);//W++
-  virtualInstMem->setInstruction(11, 0b00111110);//
-  virtualInstMem->setInstruction(12, 0b00001111);//Mem = 15(Imm)
-  virtualInstMem->setInstruction(13, 0b00101000);//W++
-  virtualInstMem->setInstruction(14, 0b00111110);//
-  virtualInstMem->setInstruction(15, 0b00011111);//Mem = 31(Imm)
-  virtualInstMem->setInstruction(16, 0b00101000);//W++
-  virtualInstMem->setInstruction(17, 0b00111110);//
-  virtualInstMem->setInstruction(18, 0b00111111);//Mem = 63(Imm)
-  virtualInstMem->setInstruction(19, 0b00101000);//W++
-  virtualInstMem->setInstruction(20, 0b00111110);//
-  virtualInstMem->setInstruction(21, 0b01111111);//Mem = 127(Imm)
-  virtualInstMem->setInstruction(22, 0b00101000);//W++
-  virtualInstMem->setInstruction(23, 0b00111110);//
-  virtualInstMem->setInstruction(24, 0b11111111);//Mem = 127(Imm)
-  virtualInstMem->setInstruction(25, 0b00101000);//W++
-
-  virtualInstMem->setInstruction(26, 0b00000000);
-  virtualInstMem->setInstruction(27, 2);//JMP 2
+  virtualInstMem->setInstruction(11, 0b01001000);
+  virtualInstMem->setInstruction(12, 0b00000100);//JNZ (jump to 4 if A!=0)
+  virtualInstMem->setInstruction(13, 0b00000000);//HLT
 
   //Simulate the cpu8008
   Serial.println("Starting the CPU emulation");

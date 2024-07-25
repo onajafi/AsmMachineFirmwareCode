@@ -30,10 +30,12 @@ int main() {
         0b00000110,
         0b00000001, // A = 1
         0b11111000, // Mem = W
-        0b00000010, // A << 1
-        0b00101000, // W++
         0b00111100, 
-        0b00000000, // CMP (if A==0)
+        0b11111111, // CMP (if A==255)
+        0b00000010, // A << 1
+        0b00110100,
+        0b00000001, // A = A | 1
+        0b00101000, // W++
         0b01001000,
         0b00000100, // JNZ (jump to 4 if A!=0)
         0b00000000, // HLT
@@ -67,7 +69,7 @@ int main() {
         }
 
         //wait for 0.5 seconds
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
     }
 
