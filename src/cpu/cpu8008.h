@@ -120,6 +120,14 @@ public:
         }
     }
 
+    void setMemory(byte address, byte val){
+        if(address < MEMORY_SIZE){
+            memory[address] = val;
+        }else{
+            logger.log(DebugLevel::ERROR, "setMemory::Invalid Memory Address: %d", address);
+        }
+    }
+
     bool isHalted(){
         return halted;
     }

@@ -50,7 +50,8 @@ void setup() {
   Serial.println("Setting up the led interface");
   ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
   
-  SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
+  // SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
+  SingletonLogger::getInstance().setLevel(DebugLevel::INFO);
   // concurrentMotorAndDisplay = new ConcurrentMotorAndDisplay(sliderMove, irReader, ledInterfaceHandler);
 }
 
@@ -84,7 +85,7 @@ void waitUntilPunchCardInsertion(){
   }
   Serial.println("Finished Step1");
 
-  //Step2 - We are a little behind the 0xAA row. Lets get back 
+  //Step2 - We are a little behind from the 0xAA row. Lets get back 
   // at the beginning of it.
   while(true){
     Serial.println("Calibrating Step2 - Finding the beginning of 0xAA");
@@ -112,90 +113,87 @@ void waitUntilPunchCardInsertion(){
   Serial.print("Length of the first row is: ");
   Serial.print(length, DEC);
   Serial.println("mm");
+  // sliderMove->setDistanceMmBetweenRows(length);
   
   //Step4 - Get to the middle of the row
   Serial.println("Calibrating Step3 - Get to the middle of the row");
-  sliderMove->runStepperByLength(length/2 + 1, LOW, 0.5);
+  sliderMove->runStepperByLength(length/2, LOW, 0.5);
+  sliderMove->runStepperByLength(length, HIGH, 0.5); // The index-0 is the row after 0xAA. So we will go one step ahead
   // Now we are ready to compute. our current index is 0
   Serial.println("Finished Step4");
 }
-
+bool first_loop = true;
 void loop() {
   SingletonLogger& logger = SingletonLogger::getInstance();
-  
-  //Clear the rail
-  // sliderMove->runStepperByLength(250, HIGH, 3);
-  // delay(500);
-  // //Get to the first row
-  // sliderMove->runStepperByLength(12, HIGH, 1);
-  // delay(100);
 
-  ledInterfaceHandler->setSevenSegment(0,0);
-  ledInterfaceHandler->setSevenSegment(1,1);
-  ledInterfaceHandler->setSevenSegment(2,2);
-  ledInterfaceHandler->setSevenSegment(3,3);
-  ledInterfaceHandler->setSevenSegment(4,4);
-  ledInterfaceHandler->setSevenSegment(5,5);
-  ledInterfaceHandler->setSevenSegment(6,6);
-  ledInterfaceHandler->setSevenSegment(7,7);
-  for(int i=0; i<8; i++){
-    ledInterfaceHandler->setMatrix8x8(i, 0b00000000);
+  if (first_loop){
+    ledInterfaceHandler->setSevenSegment(0,0);
+    ledInterfaceHandler->setSevenSegment(1,0);
+    ledInterfaceHandler->setSevenSegment(2,0);
+    ledInterfaceHandler->setSevenSegment(3,0);
+    ledInterfaceHandler->setSevenSegment(4,0);
+    ledInterfaceHandler->setSevenSegment(5,0);
+    ledInterfaceHandler->setSevenSegment(6,0);
+    ledInterfaceHandler->setSevenSegment(7,0);
+    for(int i=0; i<8; i++){
+      ledInterfaceHandler->setMatrix8x8(i, 0b00000000);
+    }
+    // ledInterfaceHandler->setMatrix8x8(0, 0b00011000);
+    // ledInterfaceHandler->setMatrix8x8(1, 0b00100100);
+    // ledInterfaceHandler->setMatrix8x8(2, 0b01000010);
+    // ledInterfaceHandler->setMatrix8x8(3, 0b10000001);
+    // ledInterfaceHandler->setMatrix8x8(4, 0b10000001);
+    // ledInterfaceHandler->setMatrix8x8(5, 0b01000010);
+    // ledInterfaceHandler->setMatrix8x8(6, 0b00100100);
+    // ledInterfaceHandler->setMatrix8x8(7, 0b00011000);
+
+    // ledInterfaceHandler->turnOff();
+
+
   }
-  ledInterfaceHandler->setMatrix8x8(0, 0b00011000);
-  ledInterfaceHandler->setMatrix8x8(1, 0b00100100);
-  ledInterfaceHandler->setMatrix8x8(2, 0b01000010);
-  ledInterfaceHandler->setMatrix8x8(3, 0b10000001);
-  ledInterfaceHandler->setMatrix8x8(4, 0b10000001);
-  ledInterfaceHandler->setMatrix8x8(5, 0b01000010);
-  ledInterfaceHandler->setMatrix8x8(6, 0b00100100);
-  ledInterfaceHandler->setMatrix8x8(7, 0b00011000);
 
-  // ledInterfaceHandler->turnOff();
-
-
-  // waitUntilPunchCardInsertion();
+  waitUntilPunchCardInsertion();
   ledInterfaceHandler->displayWithTimeLimit(200);
 
-
-  //Simulate the instruction memory
-  virtualInstMem->setInstruction(0, 0b00101110);
-  virtualInstMem->setInstruction(1, 0);//W = 0
-  virtualInstMem->setInstruction(2, 0b00000110);
-  virtualInstMem->setInstruction(3, 0b00000001);//A = 1
-  virtualInstMem->setInstruction(4, 0b11111000);//Mem = W
-  virtualInstMem->setInstruction(5, 0b00111100);
-  virtualInstMem->setInstruction(6, 0b11111111);//CMP (if A==255)
-  virtualInstMem->setInstruction(7, 0b00000010);//A << 1
-  virtualInstMem->setInstruction(8, 0b00110100);
-  virtualInstMem->setInstruction(9, 0b00000001);//A = A | 1
-  virtualInstMem->setInstruction(10, 0b00101000);//W++
-  virtualInstMem->setInstruction(11, 0b01001000);
-  virtualInstMem->setInstruction(12, 0b00000100);//JNZ (jump to 4 if A!=0)
-  virtualInstMem->setInstruction(13, 0b00000000);//HLT
+  // //Simulate the instruction memory
+  // virtualInstMem->setInstruction(0, 0b00101110);
+  // virtualInstMem->setInstruction(1, 0);//W = 0
+  // virtualInstMem->setInstruction(2, 0b00000110);
+  // virtualInstMem->setInstruction(3, 0b00000001);//A = 1
+  // virtualInstMem->setInstruction(4, 0b11111000);//Mem = W
+  // virtualInstMem->setInstruction(5, 0b00111100);
+  // virtualInstMem->setInstruction(6, 0b11111111);//CMP (if A==255)
+  // virtualInstMem->setInstruction(7, 0b00000010);//A << 1
+  // virtualInstMem->setInstruction(8, 0b00110100);
+  // virtualInstMem->setInstruction(9, 0b00000001);//A = A | 1
+  // virtualInstMem->setInstruction(10, 0b00101000);//W++
+  // virtualInstMem->setInstruction(11, 0b01001000);
+  // virtualInstMem->setInstruction(12, 0b00000100);//JNZ (jump to 4 if A!=0)
+  // virtualInstMem->setInstruction(13, 0b00000000);//HLT
 
   //Simulate the cpu8008
   Serial.println("Starting the CPU emulation");
   int pc = 0;
   for(int i=0; true; i++){
     logger.log(DebugLevel::DEBUG, "Begin cycle process");
-    Serial.print("pc: ");
-    Serial.println(pc);
+    // Serial.print("pc: ");
+    // Serial.println(pc);
     byte inst ;
     inst = instMem->getInstruction(pc);
-    // ledInterfaceHandler->displayWithTimeLimit(500000);
+    // ledInterfaceHandler->displayWithTimeLimit(1000000);
     // Serial.print("Current Inst:\t");
     // printBinary(inst);
-    Serial.println("S2-getting the virtual inst");
+    // Serial.println("S2-getting the virtual inst");
     // ledInterfaceHandler->displayWithTimeLimit(300000);
-    inst = virtualInstMem->getInstruction(pc);
+    // inst = virtualInstMem->getInstruction(pc);
 
-    Serial.print("Current Inst:\t");
-    printBinary(inst);
+    // Serial.print("Current Inst:\t");
+    // printBinary(inst);
 
-    Serial.println("S3-process");
+    // Serial.println("S3-process");
     // ledInterfaceHandler->displayWithTimeLimit(300000);
     pc = cpu8008->processInstruction(inst);
-    delay(10);
+    // delay(10);
 
     ledInterfaceHandler->setSevenSegment(0, cpu8008->getPC()/10%10);
     ledInterfaceHandler->setSevenSegment(1, cpu8008->getPC()%10);
@@ -217,12 +215,13 @@ void loop() {
       break;
     }
   }
-  Serial.println("Finished the CPU emulation");
+  logger.log(DebugLevel::INFO, "Finished the CPU emulation");
 
 
 //  runStepperByLength(80, HIGH, 500);
   // delay(1000); // One second delay
-  ledInterfaceHandler->displayWithTimeLimit(100000000);//This works as a delay
+  ledInterfaceHandler->displayWithTimeLimit(1000000);//This works as a delay
+  first_loop = false;
 }
 
 void printBinary(unsigned char _data){

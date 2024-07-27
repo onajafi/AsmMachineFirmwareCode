@@ -43,6 +43,11 @@ public:
         pinMode(dirPin, OUTPUT);
     }
 
+    //This function will be used in the calibration process:
+    void setDistanceMmBetweenRows(float val){
+        this->distanceMmBetweenRows = val;
+    }
+
     void setPulseWidth(int pulseWidthUs) {
         this->pulseWidthUs = pulseWidthUs;
     }
