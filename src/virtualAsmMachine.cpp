@@ -4,9 +4,11 @@
 
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <fstream>
 #include "./cpu/cpu8008.h"
 #include "./peripheral/virtualInstructionMemory.h"
 
@@ -19,10 +21,16 @@
 
 #include <bitset>
 
-int main() {
+int main(int argc, char* argv[]) {
     // Call the test functions
     std::shared_ptr<Cpu8008> cpu8008 = std::make_shared<Cpu8008>();
     std::shared_ptr<VirtualInstructionMemory> virtualInstMem = std::make_shared<VirtualInstructionMemory>();
+
+    //Check if the first argument is provided
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <file>" << std::endl;
+        return 1;
+    }
 
     //Initialize the data memory
     cpu8008->setMemory(0, 63);
@@ -35,34 +43,27 @@ int main() {
     cpu8008->setMemory(7, 3);
 
     //Simulate the instruction memory
-    std::vector<uint8_t> instructions = {
-        
-        0b00010110,
-        0b00000111, // C = 7
-        0b00101110,
-        0b00000000, // W = 0
-        0b11000111, // A = Mem
-        0b00101000, // INR W
-        0b10111111, // CMP Mem
-        0b01110000, // JMP if A >= Mem
-        0b00001110, //  to 14
-        0b11001111, // B = Mem
-        0b11111000, // Mem = A
-        0b00101001, // DCR W
-        0b11111001, // Mem = B
-        0b00101000, // INR W
-        0b11000101, // A = W
-        0b10111010, // CMP compare A with C
-        0b01001000, // JNZ
-        0b00000100, //  to 4
-        0b00010001, // DCR C
-        0b11000010, // A = C
-        0b00111100, // CPI compare A
-        0b00000000, //  with 0
-        0b01001000, // JNZ
-        0b00000010, //  to 2
-        0b00000000, // HLT
-    };
+    std::vector<uint8_t> instructions = {};
+
+    //Read the instructions from the file
+    std::ifstream file(argv[1]);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            // Extract the binary part using regex
+            std::regex binaryRegex("0b([01]+)");
+            std::smatch match;
+            if (std::regex_search(line, match, binaryRegex)) {
+                std::string binaryPart = match[1].str();
+                instructions.push_back(std::stoi(binaryPart, nullptr, 2));
+                // std::cout << binaryPart << "-" << std::stoi(binaryPart, nullptr, 2) << std::endl;
+            }
+        }
+        file.close();
+    }else{
+        std::cerr << "Unable to open file" << std::endl;
+        return 1;
+    }
 
     // Set instructions to the virtual instruction memory
     for (size_t i = 0; i < instructions.size(); i++) {
