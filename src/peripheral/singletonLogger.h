@@ -17,6 +17,7 @@ private:
     SingletonLogger(){};
 
     DebugLevel _level = DebugLevel::INFO;
+    bool _stopOnError = true;
 
 public:
     static SingletonLogger _instance;
@@ -27,6 +28,10 @@ public:
     //Method to define the severity level of the logs to print
     void setLevel(DebugLevel level){
         _level = level;
+    }
+
+    void setStopOnError(bool stop){
+        _stopOnError = stop;
     }
 
 
@@ -55,6 +60,9 @@ public:
             }
             Serial.print("] ");
             Serial.println(buffer);
+            if(level == DebugLevel::ERROR && _stopOnError){
+                while(true);
+            }
         #else
             if(level == DebugLevel::DEBUG)
                 printf("[DEBUG] ");

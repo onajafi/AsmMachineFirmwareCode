@@ -29,6 +29,7 @@ public:
     byte getInstruction(uint32_t address) override{
         sliderMove->stepNRows(address - this->sliderIndex, 4.0);
         this->sliderIndex = address;
+        delayMicroseconds(100);
         return irReader->read();
     }
 
@@ -43,9 +44,8 @@ public:
     }
 
 private:
-    byte instructions[256];
     SliderMove* sliderMove;
     IrReader* irReader;
-    int sliderIndex;
-    int stepsLeftToGo;
+    uint8_t sliderIndex;
+    uint8_t stepsLeftToGo;
 };

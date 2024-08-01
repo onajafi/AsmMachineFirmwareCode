@@ -44,8 +44,8 @@ void setup() {
 
   Serial.println("Setting up the memory");
   instMem = new PhysicalInstructionMemory(sliderMove, irReader);
-  Serial.println("Setting up the virtual memory");
-  virtualInstMem = new VirtualInstructionMemory();
+  // Serial.println("Setting up the virtual memory");
+  // virtualInstMem = new VirtualInstructionMemory();
 
   Serial.println("Setting up the led interface");
   ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
@@ -65,8 +65,9 @@ void waitUntilPunchCardInsertion(){
       Serial.println("Waiting for the first instruction");
     // delay(1000);
     //Run as long as the first non-0xff is found
-    sliderMove->runStepperByDuration(50000, HIGH, 2.0);
-    if(irReader->read() == 0xAA){
+    sliderMove->runStepperByDuration(20000, HIGH, 2.0);
+    uint8_t res = irReader->read();
+    if(res == 0xAA){
       break;
     }
   }
@@ -177,11 +178,15 @@ void loop() {
   //Resetting the registers
   cpu8008->resetRegisters();
   instMem->resetIndex();
-  int pc = 0;
+  uint8_t pc = 0;
   for(int i=0; true; i++){
     logger.log(DebugLevel::DEBUG, "Begin cycle process");
-    // Serial.print("pc: ");
-    // Serial.println(pc);
+    Serial.print("A: ");
+    Serial.println(cpu8008->getReg(0));
+    Serial.print("W: ");
+    Serial.println(cpu8008->getReg(5));
+    Serial.print("pc: ");
+    Serial.println(pc);
     byte inst ;
     inst = instMem->getInstruction(pc);
     // ledInterfaceHandler->displayWithTimeLimit(1000000);
@@ -197,7 +202,8 @@ void loop() {
     // Serial.println("S3-process");
     // ledInterfaceHandler->displayWithTimeLimit(300000);
     pc = cpu8008->processInstruction(inst);
-    // delay(10);
+    // if(!first_loop)
+    //   delay(10000);
 
     ledInterfaceHandler->setSevenSegment(0, cpu8008->getPC()/10%10);
     ledInterfaceHandler->setSevenSegment(1, cpu8008->getPC()%10);
@@ -208,8 +214,8 @@ void loop() {
     ledInterfaceHandler->setSevenSegment(4, cpu8008->getReg(1)/10%10);
     ledInterfaceHandler->setSevenSegment(5, cpu8008->getReg(1)%10);
 
-    ledInterfaceHandler->setSevenSegment(4, cpu8008->getReg(5)/10%10);
-    ledInterfaceHandler->setSevenSegment(5, cpu8008->getReg(5)%10);
+    ledInterfaceHandler->setSevenSegment(6, cpu8008->getReg(5)/10%10);
+    ledInterfaceHandler->setSevenSegment(7, cpu8008->getReg(5)%10);
     
     for(uint8_t j=0; j<8; j++){
       ledInterfaceHandler->setMatrix8x8(j, cpu8008->getMemory(j));
