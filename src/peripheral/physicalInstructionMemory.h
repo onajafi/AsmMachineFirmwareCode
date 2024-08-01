@@ -13,7 +13,14 @@ int magnitude(int val){
 class PhysicalInstructionMemory : public InstructionMemory{
 public:
     PhysicalInstructionMemory(SliderMove* _sliderMove, IrReader* _irReader):
-        sliderMove(_sliderMove), irReader(_irReader){}
+        sliderMove(_sliderMove), irReader(_irReader){
+            this->resetIndex();
+        }
+
+    void resetIndex(){
+        sliderIndex = 0;
+        stepsLeftToGo = 0;
+    }
 
     void setInstruction(byte address, byte instruction) override{
         Serial.println("Can't write to Physical Memory");
@@ -34,10 +41,11 @@ public:
     byte readInstruction(){
         return irReader->read();
     }
+
 private:
     byte instructions[256];
     SliderMove* sliderMove;
     IrReader* irReader;
-    int sliderIndex = 0;
-    int stepsLeftToGo = 0;
+    int sliderIndex;
+    int stepsLeftToGo;
 };

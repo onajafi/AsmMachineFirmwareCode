@@ -50,8 +50,8 @@ void setup() {
   Serial.println("Setting up the led interface");
   ledInterfaceHandler = LedInterfaceHandlerSingleton::getInstance();
   
-  // SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
-  SingletonLogger::getInstance().setLevel(DebugLevel::INFO);
+  SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
+  // SingletonLogger::getInstance().setLevel(DebugLevel::INFO);
   // concurrentMotorAndDisplay = new ConcurrentMotorAndDisplay(sliderMove, irReader, ledInterfaceHandler);
 }
 
@@ -113,7 +113,8 @@ void waitUntilPunchCardInsertion(){
   Serial.print("Length of the first row is: ");
   Serial.print(length, DEC);
   Serial.println("mm");
-  // sliderMove->setDistanceMmBetweenRows(length);
+  // sliderMove->setDistanceMmBetweenRows(8);
+  sliderMove->setDistanceMmBetweenRows(6);
   
   //Step4 - Get to the middle of the row
   Serial.println("Calibrating Step3 - Get to the middle of the row");
@@ -172,7 +173,10 @@ void loop() {
   // virtualInstMem->setInstruction(13, 0b00000000);//HLT
 
   //Simulate the cpu8008
-  Serial.println("Starting the CPU emulation");
+  Serial.println("Starting the CPU emulation1");
+  //Resetting the registers
+  cpu8008->resetRegisters();
+  instMem->resetIndex();
   int pc = 0;
   for(int i=0; true; i++){
     logger.log(DebugLevel::DEBUG, "Begin cycle process");
@@ -218,8 +222,6 @@ void loop() {
   logger.log(DebugLevel::INFO, "Finished the CPU emulation");
 
 
-//  runStepperByLength(80, HIGH, 500);
-  // delay(1000); // One second delay
   ledInterfaceHandler->displayWithTimeLimit(1000000);//This works as a delay
   first_loop = false;
 }
@@ -230,24 +232,4 @@ void printBinary(unsigned char _data){
     Serial.print((_data & (0x01 << i)) ? "1":"0");
   }
   Serial.print("\n");
-}
-
-int readSerialNumber(){
-  int output = 0;
-  while(Serial.available() > 0){
-    int num_char = Serial.read();
-    if('0' <= num_char && num_char <='9'){
-      output = output*10 + (num_char - '0');
-    }
-  }
-  return output; 
-}
-
-
-void go2Row(int idx){
-  static int current_row = 1;
-
-  sliderMove->stepNRows(idx - current_row, 1.5);
-  current_row = idx;
-
 }

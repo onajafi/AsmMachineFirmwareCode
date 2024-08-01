@@ -50,35 +50,30 @@ class Cpu8008{
     //Logger
     SingletonLogger& logger = SingletonLogger::getInstance();
 
+    //Dummy register to return as a NONE
+    byte dummy;
 
     //This function simplifies the process of accessing the registers and memory
     byte& getRegOrMem(uint8_t add){
         switch (add){
         case 0:
             return A;
-            break;
         case 1:
             return B;
-            break;
         case 2:
             return C;
-            break;
         case 3:
             return D;
-            break;
         case 4:
             return E;
-            break;
         case 5:
             return W;
-            break;
         case 7:
             return memory[W];//Read from memory
-            break;
         default:
             // Handle error or return default value
             logger.log(DebugLevel::ERROR, "Invalid Register or Memory Address: %d", add);
-            break;
+            return dummy;
         }
     }
 
@@ -102,6 +97,22 @@ public:
         for(int i=0; i<MEMORY_SIZE; i++){
             memory[i] = 0;
         }
+    }
+
+    void resetRegisters(){
+        A=0;//0
+        B=0;//1
+        C=0;//2
+        D=0;//3
+        E=0;//4
+        W=0;//5(Technically this replaces the L & W in the 8008 architecture)
+        PC=0;
+        state = NONE;
+
+        sign = 0;
+        zero = 0;
+        parity = 0;
+        carry = 0;
     }
 
     int getPC() const{
