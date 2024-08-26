@@ -42,61 +42,65 @@ int main(int argc, char* argv[]) {
     cpu8008->setMemory(6, 1);
     cpu8008->setMemory(7, 3);
 
-    //Simulate the instruction memory
-    std::vector<uint8_t> instructions = {};
 
-    //Read the instructions from the file
-    std::ifstream file(argv[1]);
-    if (file.is_open()) {
-        std::string line;
-        while (std::getline(file, line)) {
-            // Extract the binary part using regex
-            std::regex binaryRegex("0b([01]+)");
-            std::smatch match;
-            if (std::regex_search(line, match, binaryRegex)) {
-                std::string binaryPart = match[1].str();
-                instructions.push_back(std::stoi(binaryPart, nullptr, 2));
-                // std::cout << binaryPart << "-" << std::stoi(binaryPart, nullptr, 2) << std::endl;
+    //Read the instructions from the file(s)
+    for(int file_idx = 1; file_idx < argc; file_idx++){
+        std::cout << "Reading file: " << argv[file_idx] << std::endl;
+        std::ifstream file(argv[file_idx]);
+
+        std::vector<uint8_t> instructions = {};
+        if (file.is_open()) {
+            std::string line;
+            while (std::getline(file, line)) {
+                // Extract the binary part using regex
+                std::regex binaryRegex("0b([01]+)");
+                std::smatch match;
+                if (std::regex_search(line, match, binaryRegex)) {
+                    std::string binaryPart = match[1].str();
+                    instructions.push_back(std::stoi(binaryPart, nullptr, 2));
+                    // std::cout << binaryPart << "-" << std::stoi(binaryPart, nullptr, 2) << std::endl;
+                }
             }
-        }
-        file.close();
-    }else{
-        std::cerr << "Unable to open file" << std::endl;
-        return 1;
-    }
-
-    // Set instructions to the virtual instruction memory
-    for (size_t i = 0; i < instructions.size(); i++) {
-        virtualInstMem->setInstruction(i, instructions[i]);
-    }
-
-    //Simulate the cpu8008
-    SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
-    while(1){
-        byte inst;
-        inst = virtualInstMem->getInstruction(cpu8008->getPC());
-        
-        std::cout << "[" << cpu8008->getPC() << "]:\t" << std::bitset<8>(inst) << std::endl;
-        
-        cpu8008->processInstruction(inst);
-        std::cout << "Ra:\t" << (int) cpu8008->getReg(0) << std::endl;
-        std::cout << "Rb:\t" << (int) cpu8008->getReg(1) << std::endl;
-        std::cout << "Rc:\t" << (int) cpu8008->getReg(2) << std::endl;
-        std::cout << "Rw:\t" << (int) cpu8008->getReg(5) << std::endl;
-        //Print a chunck of memory (index 0 to 7)
-        for(uint8_t j=0; j<8; j++){
-            std::cout << "M[" << (int) j << "]:\t" << (int) cpu8008->getMemory(j) << std::endl;
-        }
-        // std::cout << "Next PC:\t" << cpu8008->getPC() << std::endl;
-
-        if(cpu8008->isHalted()){
-            std::cout << "Finished" << std::endl;
-            break;
+            file.close();
+        }else{
+            std::cerr << "Unable to open file" << std::endl;
+            return 1;
         }
 
-        //wait for 0.5 seconds
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        
+        // Set instructions to the virtual instruction memory
+        for (size_t i = 0; i < instructions.size(); i++) {
+            virtualInstMem->setInstruction(i, instructions[i]);
+        }
+
+        //Simulate the cpu8008
+        cpu8008->resetRegisters();
+        SingletonLogger::getInstance().setLevel(DebugLevel::DEBUG);
+        while(1){
+            byte inst;
+            inst = virtualInstMem->getInstruction(cpu8008->getPC());
+            
+            std::cout << "[" << cpu8008->getPC() << "]:\t" << std::bitset<8>(inst) << std::endl;
+            
+            cpu8008->processInstruction(inst);
+            std::cout << "Ra:\t" << (int) cpu8008->getReg(0) << std::endl;
+            std::cout << "Rb:\t" << (int) cpu8008->getReg(1) << std::endl;
+            std::cout << "Rc:\t" << (int) cpu8008->getReg(2) << std::endl;
+            std::cout << "Rw:\t" << (int) cpu8008->getReg(5) << std::endl;
+            //Print a chunck of memory (index 0 to 7)
+            for(uint8_t j=0; j<8; j++){
+                std::cout << "M[" << (int) j << "]:\t" << (int) cpu8008->getMemory(j) << std::endl;
+            }
+            // std::cout << "Next PC:\t" << cpu8008->getPC() << std::endl;
+
+            if(cpu8008->isHalted()){
+                std::cout << "Finished" << std::endl;
+                break;
+            }
+
+            //wait for 0.5 seconds
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            
+        }
     }
 
     return 0;
