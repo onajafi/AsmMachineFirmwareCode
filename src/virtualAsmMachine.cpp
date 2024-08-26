@@ -32,17 +32,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //Initialize the data memory
-    cpu8008->setMemory(0, 63);
-    cpu8008->setMemory(1, 7);
-    cpu8008->setMemory(2, 127);
-    cpu8008->setMemory(3, 31);
-    cpu8008->setMemory(4, 255);
-    cpu8008->setMemory(5, 15);
-    cpu8008->setMemory(6, 1);
-    cpu8008->setMemory(7, 3);
-
-
     //Read the instructions from the file(s)
     for(int file_idx = 1; file_idx < argc; file_idx++){
         std::cout << "Reading file: " << argv[file_idx] << std::endl;
@@ -98,7 +87,10 @@ int main(int argc, char* argv[]) {
             }
 
             //wait for 0.5 seconds
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(file_idx == argc-1){
+                // Run the last one real slow (for debugging)
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
             
         }
     }
